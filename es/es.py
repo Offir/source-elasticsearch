@@ -43,10 +43,8 @@ class ElasticsearchSource(panoply.DataSource):
         self.inc_key = source.get("incKey")
         self.inc_val = source.get("incVal")
         self.excludes = source.get("excludes")
-
-        host, port = source.get("host").split(":")
         self.es = elasticsearch.Elasticsearch([
-            { "host": str(host), "port": str(port) }
+            source.get("host") # should be "host:port"
         ])
 
     def get_indices(self):
