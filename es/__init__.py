@@ -22,6 +22,6 @@ CONFIG = {
         }
     ],
     "categories": [ "DB" ],
-    "keywords": [ "search" ],
+    "keywords": [ "search", "database", "db" ],
     "createdAt": "2016-11-21"
 }
