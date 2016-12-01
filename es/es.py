@@ -2,7 +2,15 @@ from copy import copy
 import elasticsearch
 import panoply
 
-SCROLL_DURRATION = "1m"
+"""
+The SCROLL_DURATION tells elasticsearch how long to keep the search context open.
+Its value does not need to be long enough to process all data,
+it just needs to be long enough to process the previous batch of results.
+Each scroll request (with the scroll parameter) sets a new expiry time.
+https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html#scroll-search-context
+"""
+SCROLL_DURATION = "1m"
+
 BATCH_SIZE = 400
 DESTINATION = "elasticsearch_{_index}_{_type}"
 # https://www.elastic.co/guideen/elasticsearch/reference/current/mapping-uid-field.html
