@@ -9,7 +9,7 @@ CONFIG = {
         {
             "name": "host",
             "title": "Host",
-            "placeholder": "<HOST>:<PORT>",
+            "placeholder": "Example: 192.168.0.15:9200",
             "required": True
         },
         {
