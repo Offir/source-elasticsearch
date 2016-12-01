@@ -57,24 +57,14 @@ class ElasticsearchSource(panoply.DataSource):
         return [ i["index"] for i in indices ]
 
     def read(self):
+
         self.index = self._get_index()
         if not self.index:
             return None
 
         self.log( "Processing index: %s" % self.index )
 
-        if not self.scroll_id:
-            data = self._search(self.index)
-        else:
-            self.scroll_page += 1
-            self.log( "Scrolling page %d scroll_id: %s" % (
-                self.scroll_page,
-                self.scroll_id
-            ))
-            data = self.es.scroll(
-                scroll_id = self.scroll_id,
-                scroll = SCROLL_DURRATION
-            )
+        data = self._search(self.index)
 
         self.scroll_id = data["_scroll_id"]
 
@@ -102,16 +92,32 @@ class ElasticsearchSource(panoply.DataSource):
         return docs or self.read()
 
     def _search(self, index):
-        search_opts = {
-            "index": index,
-            "body": self._build_query(),
-            "scroll": SCROLL_DURRATION,
-            "size": BATCH_SIZE,
-            "_source_exclude": self.excludes
-        }
 
-        self.log( "Executing search:", search_opts )
-        return self.es.search( **search_opts )
+        # If the scroll_id exists, we have already executed the initial
+        # search and can now simply scroll though the results
+        if self.scroll_id:
+            self.scroll_page += 1
+            self.log( "Scrolling page %d scroll_id: %s" % (
+                self.scroll_page,
+                self.scroll_id
+            ))
+            data = self.es.scroll(
+                scroll_id = self.scroll_id,
+                scroll = SCROLL_DURATION
+            )
+        else:
+            search_opts = {
+                "index": index,
+                "body": self._build_query(),
+                "scroll": SCROLL_DURATION,
+                "size": BATCH_SIZE,
+                "_source_exclude": self.excludes
+            }
+
+            self.log( "Executing search:", search_opts )
+            data = self.es.search( **search_opts )
+
+        return data
 
     def _build_query(self):
         params = {
