@@ -54,7 +54,14 @@ class ElasticsearchSource(panoply.DataSource):
             h = ",".join(fields)
         )
 
-        return [ i["index"] for i in indices ]
+        def f(x):
+            name = "%s (%s documents)" % ( x["index"], x["docs.count"] ),
+            return {
+                "name": name,
+                "value": x["index"]
+            }
+
+        return [ f(i) for i in indices ]
 
     def read(self):
 
@@ -138,7 +145,7 @@ class ElasticsearchSource(panoply.DataSource):
     def _get_index(self):
         index = None
         try:
-            index = self.index or self.indices.pop()
+            index = self.index or self.indices.pop()["value"]
         except IndexError:
             pass
 
