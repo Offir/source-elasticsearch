@@ -126,7 +126,7 @@ class ElasticsearchSource(panoply.DataSource):
     def _get_index(self):
         index = None
         try:
-            index = self.indices.pop() if not self.index else self.index
+            index = self.index or self.indices.pop()
         except IndexError:
             pass
 
