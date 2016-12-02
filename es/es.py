@@ -3,10 +3,16 @@ import elasticsearch
 import panoply
 
 """
-The SCROLL_DURATION tells elasticsearch how long to keep the search context open.
-Its value does not need to be long enough to process all data,
-it just needs to be long enough to process the previous batch of results.
-Each scroll request (with the scroll parameter) sets a new expiry time.
+The SCROLL_DURATION tells elasticsearch how long to keep the search
+context open. Its value does not need to be long enough to process
+all data, it just needs to be long enough to process the previous
+batch of results.  Each scroll request (with the scroll parameter)
+sets a new expiry time.
+
+NOTE: This value might need to be tweaked since keeping the search context
+open consumes resources.
+
+For reference, see:
 https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html#scroll-search-context
 """
 SCROLL_DURATION = "1m"
