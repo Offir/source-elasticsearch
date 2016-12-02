@@ -13,8 +13,11 @@ class TestElasticsearch(unittest.TestCase):
 
     def setUp(self):
         self.source = {
-            "host": "h:p",
-            "indices": ["bank", "customers"]
+            "host": "1.2.3.4:5",
+            "indices": [
+                { "value": "bank" },
+                { "value": "customers"}
+            ]
         }
 
     def tearDown(self):
@@ -40,8 +43,7 @@ class TestElasticsearch(unittest.TestCase):
         index = indices[0]
 
         self.assertEqual(len(indices), len(mock_indices))
-        self.assertEqual(index.get("count"), mock.get("docs.count"))
-        self.assertEqual(index.get("title"), mock.get("index"))
+        self.assertEqual(index.get("value"), mock.get("index"))
 
     # ensure that, when passed inc_key & val, they appear in the query
     @patch("elasticsearch.Elasticsearch.search")
@@ -97,10 +99,11 @@ class TestElasticsearch(unittest.TestCase):
         third_call = stream._get_index()
 
         # With an index set, the second call should be the same
-        success = first_call == second_call == self.source["indices"][-1]
+        last_index = self.source["indices"][-1]["value"]
+        success = first_call == second_call == last_index
         self.assertTrue(success)
 
-        self.assertEqual(third_call, self.source["indices"][0])
+        self.assertEqual(third_call, self.source["indices"][0]["value"])
 
 
 # Run the test suite
