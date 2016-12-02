@@ -1,4 +1,6 @@
 from copy import copy
+from functools import wraps
+import re
 import elasticsearch
 import panoply
 
@@ -16,13 +18,27 @@ For reference, see:
 https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html#scroll-search-context
 """
 SCROLL_DURATION = "1m"
-
 BATCH_SIZE = 400
 DESTINATION = "elasticsearch_{_index}_{_type}"
 # https://www.elastic.co/guideen/elasticsearch/reference/current/mapping-uid-field.html
 IDPATTERN = "{_type}#{_id}" # same as _uid
 
 cat_api = elasticsearch.client.CatClient
+
+
+def exception_decorator(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        try:
+            res = f(*args, **kwargs)
+        except elasticsearch.TransportError as e:
+            # Removing the object reference from the exception message
+            # EG: '<module.class.object at 0x11040c810>: Exception message'
+            msg = re.sub(r"^<.*>:\s", "", e.error)
+            raise Exception(msg)
+
+        return res
+    return wrapped
 
 
 class ElasticsearchSource(panoply.DataSource):
@@ -36,6 +52,7 @@ class ElasticsearchSource(panoply.DataSource):
     loaded = 0
     num_hits = 0
 
+    @exception_decorator
     def __init__(self, source, options):
         super(ElasticsearchSource, self).__init__(source, options)
 
@@ -53,8 +70,10 @@ class ElasticsearchSource(panoply.DataSource):
             source.get("host") # should be "host:port"
         ])
 
+    @exception_decorator
     def get_indices(self):
         fields = ["index", "docs.count"]
+
         indices = cat_api(self.es).indices(
             format = "json",
             h = ",".join(fields)
@@ -104,8 +123,8 @@ class ElasticsearchSource(panoply.DataSource):
         # If no documents are returned continue to the next batch
         return docs or self.read()
 
+    @exception_decorator
     def _search(self, index):
-
         # If the scroll_id exists, we have already executed the initial
         # search and can now simply scroll though the results
         if self.scroll_id:
