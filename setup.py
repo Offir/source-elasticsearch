@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="panoply_elasticsearch",
-    version="1.0.0",
+    version="1.0.1",
     description="Panoply Data Source for Elasticsearch",
     author="Lior Rozen",
     author_email="lior@panoply.io",
