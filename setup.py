@@ -8,8 +8,7 @@ setup(
     author_email="lior@panoply.io",
     url="http://panoply.io",
     install_requires=[
-        "panoply-python-sdk==1.3.2",
-        "elasticsearch>=1.0.0,<2.0.0",
+        "panoply-python-sdk==1.3.2"
     ],
 
     # place this package within the panoply package namespace

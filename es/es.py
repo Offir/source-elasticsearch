@@ -3,6 +3,7 @@ from functools import wraps
 import re
 import elasticsearch
 import panoply
+from httplibwrapper import HTTPLibWrapper
 
 """
 The SCROLL_DURATION tells elasticsearch how long to keep the search
@@ -51,8 +52,8 @@ class ElasticsearchSource(panoply.DataSource):
     cur_total = 0
     loaded = 0
     num_hits = 0
+    con = None
 
-    @exception_decorator
     def __init__(self, source, options):
         super(ElasticsearchSource, self).__init__(source, options)
 
@@ -66,21 +67,14 @@ class ElasticsearchSource(panoply.DataSource):
         self.inc_key = source.get("incKey")
         self.inc_val = source.get("incVal")
         self.excludes = source.get("excludes")
-        self.es = elasticsearch.Elasticsearch([
-            source.get("host") # should be "host:port"
-        ])
 
-    @exception_decorator
+        self.con = HTTPLibWrapper( source.get("host") )
+
     def get_indices(self):
-        fields = ["index", "docs.count"]
-
-        indices = cat_api(self.es).indices(
-            format = "json",
-            h = ",".join(fields)
-        )
+        indices = self.con.get_indices()
 
         def f(x):
-            name = "%s (%s documents)" % ( x["index"], x["docs.count"] ),
+            name = "%s (%s documents)" % ( x["index"], x["docs.count"] )
             return {
                 "name": name,
                 "value": x["index"]
@@ -117,13 +111,12 @@ class ElasticsearchSource(panoply.DataSource):
 
         if self.loaded == self.cur_total:
             self.log("%s: Finished" % self.index)
-            self.es.clear_scroll( scroll_id = self.scroll_id)
+            self.con.clear_scroll( self.scroll_id)
             self._reset_index()
 
         # If no documents are returned continue to the next batch
         return docs or self.read()
 
-    @exception_decorator
     def _search(self, index):
         # If the scroll_id exists, we have already executed the initial
         # search and can now simply scroll though the results
@@ -133,27 +126,19 @@ class ElasticsearchSource(panoply.DataSource):
                 self.scroll_page,
                 self.scroll_id
             ))
-            data = self.es.scroll(
-                scroll_id = self.scroll_id,
-                scroll = SCROLL_DURATION
-            )
+            data = self.con.scroll( self.scroll_id, SCROLL_DURATION )
         else:
-            search_opts = {
-                "index": index,
-                "body": self._build_query(),
-                "scroll": SCROLL_DURATION,
-                "size": BATCH_SIZE,
-                "_source_exclude": self.excludes
-            }
-
-            self.log( "Executing search:", search_opts )
-            data = self.es.search( **search_opts )
+            params = self._build_query()
+            self.log( "Executing search:", index, params )
+            data = self.con.search( index, params, SCROLL_DURATION )
 
         return data
 
     def _build_query(self):
         params = {
-            "sort": [ "_doc" ]
+            "size": BATCH_SIZE,
+            "sort": [ "_doc" ],
+            "_source_excludes": self.excludes
         }
         if self.inc_key and self.inc_val:
             inc_query = {}
