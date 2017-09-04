@@ -32,8 +32,14 @@ def exception_decorator(f):
         try:
             res = f(*args, **kwargs)
         except elasticsearch.TransportError as e:
+            # Log the exception as-is so that it will be possible to view
+            # the actual exception and determine exactly what went wrong.
+            print e
+
             # Removing the object reference from the exception message
-            # EG: '<module.class.object at 0x11040c810>: Exception message'
+            # EG: '<module.class.object at 0x11040c810>: Exception message'.
+            # This is so that the end user will not see the entire exeption
+            # object but rather only the message that the error contained.
             msg = re.sub(r"^<.*>:\s", "", e.error)
             raise Exception(msg)
 
