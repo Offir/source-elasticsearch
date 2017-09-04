@@ -21,7 +21,7 @@ SCROLL_DURATION = "1m"
 BATCH_SIZE = 400
 DESTINATION = "elasticsearch_{_index}_{_type}"
 # https://www.elastic.co/guideen/elasticsearch/reference/current/mapping-uid-field.html
-IDPATTERN = "{_type}#{_id}" # same as _uid
+IDPATTERN = "{_type}#{_id}"  # same as _uid
 
 cat_api = elasticsearch.client.CatClient
 
@@ -73,7 +73,7 @@ class ElasticsearchSource(panoply.DataSource):
         self.inc_val = source.get("incVal")
         self.excludes = source.get("excludes")
         self.es = elasticsearch.Elasticsearch([
-            source.get("host") # should be "host:port"
+            source.get("host")  # should be "host:port"
         ])
 
     @exception_decorator
@@ -81,18 +81,18 @@ class ElasticsearchSource(panoply.DataSource):
         fields = ["index", "docs.count"]
 
         indices = cat_api(self.es).indices(
-            format = "json",
-            h = ",".join(fields)
+            format="json",
+            h=",".join(fields)
         )
 
         def f(x):
-            name = "%s (%s documents)" % ( x["index"], x["docs.count"] ),
+            name = "%s (%s documents)" % (x["index"], x["docs.count"]),
             return {
                 "name": name,
                 "value": x["index"]
             }
 
-        return [ f(i) for i in indices ]
+        return [f(i) for i in indices]
 
     def read(self):
 
@@ -100,7 +100,7 @@ class ElasticsearchSource(panoply.DataSource):
         if not self.index:
             return None
 
-        self.log( "Processing index: %s" % self.index )
+        self.log("Processing index: %s" % self.index)
 
         data = self._search(self.index)
 
@@ -123,7 +123,7 @@ class ElasticsearchSource(panoply.DataSource):
 
         if self.loaded == self.cur_total:
             self.log("%s: Finished" % self.index)
-            self.es.clear_scroll( scroll_id = self.scroll_id)
+            self.es.clear_scroll(scroll_id=self.scroll_id)
             self._reset_index()
 
         # If no documents are returned continue to the next batch
@@ -135,13 +135,13 @@ class ElasticsearchSource(panoply.DataSource):
         # search and can now simply scroll though the results
         if self.scroll_id:
             self.scroll_page += 1
-            self.log( "Scrolling page %d scroll_id: %s" % (
+            self.log("Scrolling page %d scroll_id: %s" % (
                 self.scroll_page,
                 self.scroll_id
             ))
             data = self.es.scroll(
-                scroll_id = self.scroll_id,
-                scroll = SCROLL_DURATION
+                scroll_id=self.scroll_id,
+                scroll=SCROLL_DURATION
             )
         else:
             search_opts = {
@@ -152,18 +152,18 @@ class ElasticsearchSource(panoply.DataSource):
                 "_source_exclude": self.excludes
             }
 
-            self.log( "Executing search:", search_opts )
-            data = self.es.search( **search_opts )
+            self.log("Executing search:", search_opts)
+            data = self.es.search(**search_opts)
 
         return data
 
     def _build_query(self):
         params = {
-            "sort": [ "_doc" ]
+            "sort": ["_doc"]
         }
         if self.inc_key and self.inc_val:
             inc_query = {}
-            inc_query[self.inc_key] = { "gte": self.inc_val }
+            inc_query[self.inc_key] = {"gte": self.inc_val}
             params["query"] = {
                 "bool": {
                     "filter": {
