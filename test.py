@@ -46,8 +46,9 @@ class TestElasticsearch(unittest.TestCase):
         self.assertEqual(index.get("value"), mock.get("index"))
 
     # ensure that, when passed inc_key & val, they appear in the query
+    @patch("elasticsearch.Elasticsearch.clear_scroll")
     @patch("elasticsearch.Elasticsearch.search")
-    def test_uses_inc_key(self, mock_search):
+    def test_uses_inc_key(self, mock_search, mock_clear_scroll):
         self.source["incKey"] = "age"
         self.source["incVal"] = 40
         stream = ElasticsearchSource(self.source, OPTIONS)
@@ -66,6 +67,7 @@ class TestElasticsearch(unittest.TestCase):
         stream._search = Mock(return_value = res)
 
         stream.read()
+        stream.read()
 
         arg_list = stream._search.call_args_list
         # Called for both indices
@@ -81,6 +83,7 @@ class TestElasticsearch(unittest.TestCase):
         stream = ElasticsearchSource(self.source, OPTIONS)
         stream._search = Mock(return_value = res)
 
+        stream.read()
         stream.read()
 
         # Called for each index
