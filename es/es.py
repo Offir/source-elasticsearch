@@ -34,7 +34,7 @@ def exception_decorator(f):
         except elasticsearch.TransportError as e:
             # Log the exception as-is so that it will be possible to view
             # the actual exception and determine exactly what went wrong.
-            print str(e)
+            print e
 
             # Removing the object reference from the exception message
             # EG: '<module.class.object at 0x11040c810>: Exception message'.
@@ -74,7 +74,7 @@ class ElasticsearchSource(panoply.DataSource):
         self.excludes = source.get("excludes")
         self.es = elasticsearch.Elasticsearch([
             source.get("host")  # should be "host:port"
-        ], verify_certs=True)
+        ])
 
     @exception_decorator
     def get_indices(self):
@@ -121,14 +121,13 @@ class ElasticsearchSource(panoply.DataSource):
         self.progress(self.num_hits, self.cur_total, progress_msg)
         self.log(progress_msg)
 
-        if not self.num_hits:
-            self.log("Finished fetching: %s" % self.loaded)
+        if self.loaded == self.cur_total:
             self.log("%s: Finished" % self.index)
             self.es.clear_scroll(scroll_id=self.scroll_id)
             self._reset_index()
 
         # If no documents are returned continue to the next batch
-        return docs or []
+        return docs or self.read()
 
     @exception_decorator
     def _search(self, index):
